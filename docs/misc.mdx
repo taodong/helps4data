@@ -20,3 +20,15 @@ In order to handle `null` value properly cross different data formats, please us
                 - "<?null?>"
               weight: 0.7
 ```
+
+## Current Datetime
+To set a property to the current datetime, please use the special string `<?now?>` in your configuration.
+
+```yaml title="Sample Current Datetime Usage"
+# Set the "createdAt" property in the "orders" entity to the current datetime
+    - entity: "orders"
+      count: 10
+      properties:
+        - name: "createdAt"
+          defaultValue: "<?now?>"
+```

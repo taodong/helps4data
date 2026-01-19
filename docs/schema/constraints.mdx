@@ -24,6 +24,7 @@ Constraints are rules used to ensure that the generated data meet the requiremen
 | length      | text                 | A fixed length text value             |
 | precision   | number               | A decimal places of a number          |
 | range       | number               | A range for integral part of a number |
+| span        | datetime, date       | A time span from an anchored datetime |
 | size        | text                 | A variant length text value           |
 
 :::warning
@@ -253,6 +254,29 @@ The range constraint is used to define a range of numeric values. It has three p
           - type: "range"
             min: 10
             max: 21
+```
+
+### Span
+The span constraint is used to define a time span from an anchored datetime, for example, 30 days after a given date. It has three properties:
+- **type**: The value needs to be "span".
+- **anchor**: The anchored datetime. It is either a string formated as `YYYY-MM-DD HH:MM:SS` or value `<?now?>`. When it's missing, the current datetime is used.
+- **span**: The time span from the anchored datetime. It consists of the following sub-properties and a none zero value for one of the sub-properties is required:
+    - **years**: Number of years from the anchor, value ranges from -10 and 10
+    - **months**: Number of months from the anchor, value ranges from -12 and 12
+    - **days**: Number of days from the anchor, value ranges from -31 and 31
+    - **hours**: Number of hours from the anchor, value ranges from -24 and 24
+    - **minutes**: Number of minutes from the anchor, value ranges from -60 and 60
+    - **seconds**: Number of seconds from the anchor, value ranges from -60 and 60
+
+```yaml title="Create a date in past 30 days from today"
+    properties:
+      - name: "in_30_days"
+        type: "date"
+        constraints:
+          - type: "span"
+            anchor: "<?now?>"
+            span:
+              days: -30
 ```
 
 ### Size
