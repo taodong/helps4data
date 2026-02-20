@@ -79,6 +79,7 @@ The extra file may contain any data generated or user uploaded. Through configur
 Property `extra` contains the following properties:
 
 - **type**: [required] The type of the extra file to be generated. It can be either `csv` or `json`.
+- **schemaVersion**: [optional] this properties used only for `json` generation. When set to 2, the generator will use the new json generation logic which supports more complex json structure. By default, the schemaVersion is 1.
 - **content**: [required] content to be included in the extra file. It contains a list of content items.
 
 <Tabs defaultValue="csv" groupId="extra_file">
@@ -103,7 +104,7 @@ Property `extra` contains the following properties:
               label: "firstName"
     ```
   </TabItem>
-  <TabItem value="json" label="Sample JSON Format Extra File Config">
+  <TabItem value="json" label="Sample Legacy JSON Format Extra File Config">
     ```yaml title="Generate JSON File"
     # Generate JSON object with the following structure:
     # {
@@ -135,7 +136,7 @@ Property `extra` contains the following properties:
   </TabItem>
 </Tabs>
 
-### Content Item
+### Content Item for CSV and legacy JSON format
 
 Each content item includes the following properties:
 
@@ -157,6 +158,76 @@ Each item of the `properties` list includes the following properties:
 
 - **name**: [required] The name of the target property.
 - **label**: The label to be used for this property in the extra file. If not provided, the property name is used.
+
+### Content Item for new JSON format
+
+When `schemaVersion` is set to 2, the content contains a list of node definitions. The full yaml design of the node definition is:
+
+1. Node Types
+Node types are categorized by its data source. There are two types of nodes: value nodes and entity nodes.
+- Value nodes: these nodes represent a direct value, such as a string, number, or boolean. They have the "type" field set to "value".
+- Entity nodes: these nodes represent a reference to an external entity. They have the "type" field set to "entity".
+
+1.1 Value Nodes
+Value nodes contain a direct value. They have the following fields:
+- id: string, required, unique identifier for the node
+- type: "value"
+- label: string, required, the label of the node
+- root: boolean, optional, indicates if this node is the root node
+- value: string, required, the value of the node
+- format: string, optional, the format of the value, can be "string", "number" or "boolean"
+- detached: boolean, optional, indicates if this node is detached from the tree node, defaults to false
+
+1.2 Entity Nodes
+Entity nodes reference an external entity. They have the following fields:
+- id: string, required, unique identifier for the node
+- type: "entity"
+- entity: string, required, the entity name
+- root: boolean, optional, indicates if this node is the root node
+- label: string, optional, the label of the node. In the case of omitted, if the structure type is map, the elements will be flatted into parent node; otherwise the entity name will be used as the label.
+- structure: a structure object, optional, defines the structure of the entity. If omitted, the structure will be inferred from the entity definition.
+- detached: boolean, optional, indicates if this node is detached from the tree node, defaults to false
+
+2 Structure Object
+The structure object defines the structure of an entity. It has two types: map structure and array structure.
+
+2.1 Map Structure
+Map structure is used when the entity is a map. It has the following fields:
+- type: "map"
+- key: string, required, one filed in the entity to be used as the key
+- values: array of value objects, required, the values in the map
+
+2.2 Array Structure
+Array structure is used when the entity is an array. It has the following fields:
+- type: "array"
+- values: array of value objects, required, the values in the array
+
+3 Value Object
+Value objects are used in the structure object to define the values in a map or array. They have the following fields:
+- exclusions: array, optional, entity properties to be excluded from the output
+- labels: map, optional, mapping of entity property names to custom labels
+- addons: array, optional, additional properties to be added to the output with static values
+
+4 Addon Object
+Addon objects are used in the value object to define a referenced property whose value either comes from a static value or aggregation. They have the following fields:
+- label: string, required, the label of the addon property
+- ref: string, required, the reference node id
+- aggregation: object, optional, it is ignored if the referenced node is a value node. If the referenced node is an entity node, this field defines the aggregation function to be applied to the referenced property.
+
+4.1 Aggregation Object
+The aggregation object defines the aggregation function to be applied to the referenced property. It has the following fields:
+- function: string, optional, the aggregation function to be applied. Supported functions are "count", "sum", "average", "min", "max", "record". When omitted, defaults to "records".
+- group_by: string, optional, the property to group by before applying the aggregation function, ignored if the function is "record".
+- filter: object, optional, defines the filter to be applied before applying the aggregation function.
+- format: string, either "value", "map" or "array", optional, defines the output format of the aggregation result. When omitted, defaults to "value" for functions other than "record", and "array" for "record" function.
+
+4.1.1 Filter Object
+The filter object defines the filter to be applied before applying the aggregation function. It has the following fields:
+- filter_prop: string, the property name in the target (referenced) entity.
+- value_type: string, `property` (look up value in current entity) or `static`.
+- filter_value: string, the property name or the static value to compare against.
+- operator: string, the comparison logic. Default: `equal`. Only `equal` is supported for now.
+
 
 
 
